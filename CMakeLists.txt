@@ -22,6 +22,8 @@ set(SOS_LIB_NAME opus)
 project(${SOS_LIB_NAME} CXX C ASM)
 
 install(DIRECTORY opus/include/ DESTINATION include)
+install(FILES ${CMAKE_SOURCE_DIR}/opus_api.h ${CMAKE_SOURCE_DIR}/opus_api_declaration.h ${CMAKE_SOURCE_DIR}/Opus.hpp DESTINATION include)
+
 set(SOS_LIB_INCLUDE_DIRECTORIES opus/include opus/celt opus/silk/float opus/silk opus/silk/fixed)
 set(SOS_LIB_DEFINES OPUS_BUILD)
 

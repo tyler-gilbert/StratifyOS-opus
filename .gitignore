@@ -2,3 +2,4 @@
 opus/
 build/
 cmake_arm/
+*.user
