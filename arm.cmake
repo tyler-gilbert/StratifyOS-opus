@@ -8,7 +8,6 @@ list(APPEND SOS_LIB_SOURCELIST
     ${CELT_SOURCES} 
     ${OPUS_SOURCES} 
 		${HEADER_SOURCES}
-		${CMAKE_SOURCE_DIR}/Opus.cpp
 		${CMAKE_SOURCE_DIR}/Opus.hpp
 		${CMAKE_SOURCE_DIR}/opus_api_declaration.h
 		${CMAKE_SOURCE_DIR}/opus_api.h)

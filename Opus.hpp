@@ -1,7 +1,7 @@
 #ifndef OPUS_HPP
 #define OPUS_HPP
 
-#include <sapi/sys/requests.h>
+#include <sapi/sys/Sys.hpp>
 #include <sapi/var/Data.hpp>
 #include <sapi/dsp/SignalData.hpp>
 #include "opus_api.h"
@@ -9,22 +9,26 @@
 namespace opus {
 
 
-typedef var::Vector<unsigned char> OpusData;
+typedef var::Vector<unsigned char> EncodedData;
 
 
-class OpusObject : public api::WorkObject {
+class OpusWorkObject : public api::WorkObject {
 public:
-    OpusObject();
+    OpusWorkObject(){
+        if( sys::Sys::request(OPUS_API_REQUEST, &m_api) < 0 ){
+            set_error_number(ENOENT);
+        }
+    }
 
 protected:
-    static const opus_api_t * api(){ return m_api; }
+    const opus_api_t * api(){ return m_api; }
 
 private:
-    static const opus_api_t * m_api;
+    const opus_api_t * m_api;
 
 };
 
-class Encoder : public OpusObject {
+class Encoder : public OpusWorkObject {
 public:
     int create(s32 sampling_frequency, int channels, int application){
         int error_number;
@@ -36,11 +40,11 @@ public:
         return 0;
     }
 
-    int encode(const dsp::SignalQ15 & input, OpusData & output){
+    int encode(const dsp::SignalQ15 & input, EncodedData & output){
         return api()->encode(m_encoder, input.vector_data_const(), input.count(), (u8*)output.cdata(), output.capacity());
     }
 
-    int encode(const dsp::SignalF32 & input, OpusData & output){
+    int encode(const dsp::SignalF32 & input, EncodedData & output){
         return api()->encode_float(m_encoder, input.vector_data_const(), input.count(), (u8*)output.cdata(), output.capacity());
     }
 
@@ -48,7 +52,7 @@ public:
         return api()->encoder_ctl(m_encoder, request, args);
     }
 
-    static int get_size(int channels){
+    int get_size(int channels){
         return api()->encoder_get_size(channels);
     }
 
@@ -58,10 +62,10 @@ private:
 
 };
 
-class Decoder : public OpusObject {
+class Decoder : public OpusWorkObject {
 public:
 
-    static int get_size(int channels){
+    int get_size(int channels){
         return api()->decoder_get_size(channels);
     }
 
@@ -82,11 +86,11 @@ public:
         }
     }
 
-    int decode(const OpusData & input, dsp::SignalQ15 & output){
+    int decode(const EncodedData & input, dsp::SignalQ15 & output){
         return api()->decode(m_decoder, input.vector_data_const(), input.count(), output.vector_data(), output.capacity(), 0);
     }
 
-    int decode(const OpusData & input, dsp::SignalF32 & output){
+    int decode(const EncodedData & input, dsp::SignalF32 & output){
         return api()->decode_float(m_decoder, input.vector_data_const(), input.count(), output.vector_data(), output.capacity(), 0);
     }
 
@@ -94,7 +98,7 @@ public:
         return api()->decoder_ctl(m_decoder, request, args);
     }
 
-    int get_nb_samples(const OpusData & data){
+    int get_nb_samples(const EncodedData & data){
         return 0;
     }
 
@@ -104,22 +108,22 @@ private:
 
 };
 
-class Packet : public OpusObject {
+class Packet : public OpusWorkObject {
 public:
 
-    static int get_bandwidth(const OpusData & data);
-    static int get_samples_per_frame(const OpusData & data, s32 sampling_frequency);
-    static int get_nb_samples(const OpusData & packet);
-    static int pad(OpusData & data, u32 new_length);
-    static int unpad(OpusData & data, u32 new_length);
-    static int pad_multistrem(OpusData & data, u32 new_length);
-    static int unpad_multistream(OpusData & data, u32 new_length);
+    int get_bandwidth(const EncodedData & data);
+    int get_samples_per_frame(const EncodedData & data, s32 sampling_frequency);
+    int get_nb_samples(const EncodedData & packet);
+    int pad(EncodedData & data, u32 new_length);
+    int unpad(EncodedData & data, u32 new_length);
+    int pad_multistrem(EncodedData & data, u32 new_length);
+    int unpad_multistream(EncodedData & data, u32 new_length);
 
 
 
 };
 
-class Repacketizer : public OpusObject {
+class Repacketizer : public OpusWorkObject {
 public:
 
     //get size
