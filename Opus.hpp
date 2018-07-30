@@ -30,22 +30,49 @@ private:
 
 class Encoder : public OpusWorkObject {
 public:
-    int create(s32 sampling_frequency, int channels, int application){
+
+    Encoder(){
+        m_encoder = 0;
+    }
+
+    ~Encoder(){
+        destroy();
+    }
+
+    enum {
+        APPLICATION_VOIP = OPUS_APPLICATION_VOIP,
+        APPLICATION_AUDIO = OPUS_APPLICATION_AUDIO,
+        APPLICATION_RESTRICTED_LOWDELAY = OPUS_APPLICATION_RESTRICTED_LOWDELAY
+    };
+
+    int create(s32 sampling_frequency, int channels, int application = APPLICATION_VOIP){
         int error_number;
         m_encoder = api()->encoder_create(sampling_frequency, channels, application, &error_number);
         if( m_encoder == 0 ){
             set_error_number(error_number);
             return -1;
         }
+        m_channels = channels;
         return 0;
     }
 
+    void destroy(){
+        if( m_encoder ){
+            api()->encoder_destroy(m_encoder);
+            m_encoder = 0;
+        }
+    }
+
     int encode(const dsp::SignalQ15 & input, EncodedData & output){
-        return api()->encode(m_encoder, input.vector_data_const(), input.count(), (u8*)output.cdata(), output.capacity());
+        return api()->encode(m_encoder,
+                             input.vector_data_const(), input.size()*m_channels,
+                             (u8*)output.cdata(), output.capacity());
     }
 
     int encode(const dsp::SignalF32 & input, EncodedData & output){
-        return api()->encode_float(m_encoder, input.vector_data_const(), input.count(), (u8*)output.cdata(), output.capacity());
+        return api()->encode_float(m_encoder,
+                                   input.vector_data_const(), input.size()*m_channels,
+                                   (u8*)output.cdata(), output.capacity());
     }
 
     int ctl(int request, void * args = 0){
@@ -58,6 +85,7 @@ public:
 
 private:
     OpusEncoder * m_encoder;
+    u8 m_channels;
 
 
 };

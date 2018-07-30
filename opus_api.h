@@ -1,7 +1,7 @@
 #ifndef OPUS_API_H
 #define OPUS_API_H
 
-#include <opus.h>
+#include "opus.h"
 
 #ifdef __cplusplus
 extern "C" {
