@@ -9,11 +9,12 @@
 namespace opus {
 
 
-typedef var::Vector<unsigned char> EncodedData;
+typedef var::Data EncodedData;
 
 
 class OpusWorkObject : public api::WorkObject {
 public:
+
     OpusWorkObject(){
         if( sys::Sys::request(OPUS_API_REQUEST, &m_api) < 0 ){
             set_error_number(ENOENT);
@@ -64,15 +65,19 @@ public:
     }
 
     int encode(const dsp::SignalQ15 & input, EncodedData & output){
-        return api()->encode(m_encoder,
-                             input.vector_data_const(), input.size()*m_channels,
+        int result = api()->encode(m_encoder,
+                             input.vector_data_const(), input.count()/m_channels,
                              (u8*)output.cdata(), output.capacity());
+        if( result > 0 ){ output.set_size(result); }
+        return result;
     }
 
     int encode(const dsp::SignalF32 & input, EncodedData & output){
-        return api()->encode_float(m_encoder,
-                                   input.vector_data_const(), input.size()*m_channels,
+        int result = api()->encode_float(m_encoder,
+                                   input.vector_data_const(), input.count()/m_channels,
                                    (u8*)output.cdata(), output.capacity());
+        if( result > 0 ){ output.set_size(result); }
+        return result;
     }
 
     int ctl(int request, void * args = 0){
@@ -115,11 +120,11 @@ public:
     }
 
     int decode(const EncodedData & input, dsp::SignalQ15 & output){
-        return api()->decode(m_decoder, input.vector_data_const(), input.count(), output.vector_data(), output.capacity(), 0);
+                return api()->decode(m_decoder, (const u8*)input.cdata_const(), input.size(), output.vector_data(), output.count(), 0);
     }
 
     int decode(const EncodedData & input, dsp::SignalF32 & output){
-        return api()->decode_float(m_decoder, input.vector_data_const(), input.count(), output.vector_data(), output.capacity(), 0);
+                return api()->decode_float(m_decoder, (const u8*)input.cdata_const(), input.size(), output.vector_data(), output.count(), 0);
     }
 
     int ctl(int request, void * args = 0){
