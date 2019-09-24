@@ -3,29 +3,36 @@
 
 #include <sapi/sys/Sys.hpp>
 #include <sapi/var/Data.hpp>
+#include <sapi/arg/Argument.hpp>
 #include <sapi/dsp/SignalData.hpp>
 #include "opus_api.h"
 
+namespace arg {
+
+using OpusSampleFrequency = Argument<s32, struct OpusSampleFrequencyTag>;
+using OpusChannelCount = Argument<u32, struct OpusChannelCountTag>;
+using OpusControlRequest = Argument<int, struct OpusControlRequestTag>;
+using OpusControlArgument = Argument<void*, struct OpusControlArgumentTag>;
+
+}
+
 namespace opus {
 
-
-typedef var::Data EncodedData;
+using OpusApi = api::Api<opus_api_t, OPUS_API_REQUEST>;
 
 
 class OpusWorkObject : public api::WorkObject {
 public:
 
-    OpusWorkObject(){
-        if( sys::Sys::request(OPUS_API_REQUEST, &m_api) < 0 ){
-            set_error_number(ENOENT);
-        }
-    }
+	 OpusWorkObject(){}
+
+	 static OpusApi & api(){ return m_api; }
 
 protected:
-    const opus_api_t * api(){ return m_api; }
+
 
 private:
-    const opus_api_t * m_api;
+	 static OpusApi m_api;
 
 };
 
@@ -40,53 +47,38 @@ public:
         destroy();
     }
 
-    enum {
+	 enum application_type {
         APPLICATION_VOIP = OPUS_APPLICATION_VOIP,
         APPLICATION_AUDIO = OPUS_APPLICATION_AUDIO,
         APPLICATION_RESTRICTED_LOWDELAY = OPUS_APPLICATION_RESTRICTED_LOWDELAY
     };
 
-    int create(s32 sampling_frequency, int channels, int application = APPLICATION_VOIP){
-        int error_number;
-        m_encoder = api()->encoder_create(sampling_frequency, channels, application, &error_number);
-        if( m_encoder == 0 ){
-            set_error_number(error_number);
-            return -1;
-        }
-        m_channels = channels;
-        return 0;
-    }
+	 int create(
+			 arg::OpusSampleFrequency sampling_frequency,
+			 arg::OpusChannelCount channel_count,
+			 enum application_type application = APPLICATION_VOIP
+			 );
 
-    void destroy(){
-        if( m_encoder ){
-            api()->encoder_destroy(m_encoder);
-            m_encoder = 0;
-        }
-    }
+	 void destroy();
 
-    int encode(const dsp::SignalQ15 & input, EncodedData & output){
-        int result = api()->encode(m_encoder,
-                             input.vector_data_const(), input.count()/m_channels,
-                             (u8*)output.cdata(), output.capacity());
-        if( result > 0 ){ output.set_size(result); }
-        return result;
-    }
+	 int encode(
+			 const arg::SourceData input,
+			 arg::DestinationData output
+			 );
 
-    int encode(const dsp::SignalF32 & input, EncodedData & output){
-        int result = api()->encode_float(m_encoder,
-                                   input.vector_data_const(), input.count()/m_channels,
-                                   (u8*)output.cdata(), output.capacity());
-        if( result > 0 ){ output.set_size(result); }
-        return result;
-    }
+	 int encode_float(
+			 const arg::SourceData input,
+			 arg::DestinationData output
+			 );
 
-    int ctl(int request, void * args = 0){
-        return api()->encoder_ctl(m_encoder, request, args);
-    }
+	 int ctl(
+			 arg::OpusControlRequest request,
+			 arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
+			 );
 
-    int get_size(int channels){
-        return api()->encoder_get_size(channels);
-    }
+	 int get_size(
+			 arg::OpusChannelCount channel_count
+			 );
 
 private:
     OpusEncoder * m_encoder;
@@ -98,42 +90,35 @@ private:
 class Decoder : public OpusWorkObject {
 public:
 
-    int get_size(int channels){
-        return api()->decoder_get_size(channels);
-    }
+	 int get_size(
+			 arg::OpusChannelCount channel_count
+			 );
 
-    int create(s32 sampling_frequency, int channels){
-        int error_number;
-        m_decoder = api()->decoder_create(sampling_frequency, channels, &error_number);
-        if( m_decoder == 0 ){
-            set_error_number(error_number);
-            return -1;
-        }
-        return 0;
-    }
+	 int create(
+			 arg::OpusSampleFrequency sampling_frequency,
+			 arg::OpusChannelCount channel_count
+			 );
 
-    void destroy(){
-        if( m_decoder ){
-            api()->decoder_destroy(m_decoder);
-            m_decoder = 0;
-        }
-    }
+	 void destroy();
 
-    int decode(const EncodedData & input, dsp::SignalQ15 & output){
-                return api()->decode(m_decoder, (const u8*)input.cdata_const(), input.size(), output.vector_data(), output.count(), 0);
-    }
+	 int decode(
+			 const arg::SourceData input,
+			 arg::DestinationData output
+			 );
 
-    int decode(const EncodedData & input, dsp::SignalF32 & output){
-                return api()->decode_float(m_decoder, (const u8*)input.cdata_const(), input.size(), output.vector_data(), output.count(), 0);
-    }
+	 int decode_float(
+			 const arg::SourceData input,
+			 arg::DestinationData output
+			 );
 
-    int ctl(int request, void * args = 0){
-        return api()->decoder_ctl(m_decoder, request, args);
-    }
+	 int ctl(
+			 arg::OpusControlRequest request,
+			 arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
+			 );
 
-    int get_nb_samples(const EncodedData & data){
-        return 0;
-    }
+	 int get_sample_count(
+			 const arg::SourceData input
+			 );
 
 private:
     OpusDecoder * m_decoder;
@@ -144,13 +129,38 @@ private:
 class Packet : public OpusWorkObject {
 public:
 
-    int get_bandwidth(const EncodedData & data);
-    int get_samples_per_frame(const EncodedData & data, s32 sampling_frequency);
-    int get_nb_samples(const EncodedData & packet);
-    int pad(EncodedData & data, u32 new_length);
-    int unpad(EncodedData & data, u32 new_length);
-    int pad_multistrem(EncodedData & data, u32 new_length);
-    int unpad_multistream(EncodedData & data, u32 new_length);
+	 int get_bandwidth(
+			 const arg::SourceData data
+			 );
+
+	 int get_samples_per_frame(
+			 const arg::SourceData data,
+			 arg::OpusSampleFrequency
+			 );
+
+	 int get_sample_count(
+			 const arg::SourceData data
+			 );
+
+	 int pad(
+			 arg::DestinationData data,
+			 arg::Length length
+			 );
+
+	 int unpad(
+			 arg::DestinationData data,
+			 arg::Length length
+			 );
+
+	 int pad_multistrem(
+			 arg::DestinationData data,
+			 arg::Length length
+			 );
+
+	 int unpad_multistream(
+			 arg::DestinationData data,
+			 arg::Length length
+			 );
 
 
 
