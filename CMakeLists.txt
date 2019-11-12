@@ -22,7 +22,11 @@ set(SOS_NAME opus)
 project(${SOS_NAME} CXX C ASM)
 
 install(DIRECTORY opus/include/ DESTINATION include)
-install(FILES ${CMAKE_SOURCE_DIR}/opus_api.h ${CMAKE_SOURCE_DIR}/opus_api_declaration.h ${CMAKE_SOURCE_DIR}/Opus.hpp DESTINATION include)
+install(FILES
+	${CMAKE_SOURCE_DIR}/opus_api.h
+	${CMAKE_SOURCE_DIR}/opus_api_declaration.h
+	${CMAKE_SOURCE_DIR}/Opus.hpp DESTINATION
+	include)
 
 set(SOS_INCLUDE_DIRECTORIES
 	opus/include
