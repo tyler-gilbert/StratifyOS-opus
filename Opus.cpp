@@ -33,9 +33,8 @@ void Encoder::destroy(){
 	}
 }
 
-int Encoder::encode(
-		const arg::SourceData input,
-		arg::DestinationData output
+int Encoder::encode(SourceData input,
+		DestinationData output
 		){
 	int result = api()->encode(
 				m_encoder,
@@ -47,9 +46,8 @@ int Encoder::encode(
 	return result;
 }
 
-int Encoder::encode_float(
-		const arg::SourceData input,
-		arg::DestinationData output
+int Encoder::encode_float(SourceData input,
+		DestinationData output
 		){
 	int result = api()->encode_float(
 				m_encoder,
@@ -113,8 +111,8 @@ void Decoder::destroy(){
 }
 
 int Decoder::decode(
-		const arg::SourceData input,
-		arg::DestinationData output
+		SourceData input,
+		DestinationData output
 		){
 
 	return api()->decode(
@@ -128,8 +126,8 @@ int Decoder::decode(
 }
 
 int Decoder::decode_float(
-		const arg::SourceData input,
-		arg::DestinationData output
+		SourceData input,
+		DestinationData output
 		){
 
 	return api()->decode_float(
@@ -153,8 +151,7 @@ int Decoder::ctl(
 				);
 }
 
-int Decoder::get_sample_count(
-		const arg::SourceData input
+int Decoder::get_sample_count(const var::Data& input
 		){
 	return 0;
 }

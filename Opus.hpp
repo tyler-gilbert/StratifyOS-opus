@@ -20,69 +20,73 @@ namespace opus {
 
 using OpusApi = api::Api<opus_api_t, OPUS_API_REQUEST>;
 
-
 class OpusWorkObject : public api::WorkObject {
 public:
 
-	 OpusWorkObject(){}
+	using SourceData = arg::Argument<const var::Data &, struct OpusWorkObjectSourceDataTag>;
+	using DestinationData = arg::Argument<var::Data &, struct OpusWorkObjectSourceDataTag>;
+	using Length = arg::Argument<u32, struct OpusWorkObjectLengthTag>;
 
-	 static OpusApi & api(){ return m_api; }
+	OpusWorkObject(){}
+
+	static OpusApi & api(){ return m_api; }
 
 protected:
 
 
 private:
-	 static OpusApi m_api;
+	static OpusApi m_api;
 
 };
 
 class Encoder : public OpusWorkObject {
 public:
 
-    Encoder(){
-        m_encoder = 0;
-    }
 
-    ~Encoder(){
-        destroy();
-    }
+	Encoder(){
+		m_encoder = 0;
+	}
 
-	 enum application_type {
-        APPLICATION_VOIP = OPUS_APPLICATION_VOIP,
-        APPLICATION_AUDIO = OPUS_APPLICATION_AUDIO,
-        APPLICATION_RESTRICTED_LOWDELAY = OPUS_APPLICATION_RESTRICTED_LOWDELAY
-    };
+	~Encoder(){
+		destroy();
+	}
 
-	 int create(
-			 arg::OpusSampleFrequency sampling_frequency,
-			 arg::OpusChannelCount channel_count,
-			 enum application_type application = APPLICATION_VOIP
-			 );
+	enum application_type {
+		APPLICATION_VOIP = OPUS_APPLICATION_VOIP,
+		APPLICATION_AUDIO = OPUS_APPLICATION_AUDIO,
+		APPLICATION_RESTRICTED_LOWDELAY = OPUS_APPLICATION_RESTRICTED_LOWDELAY
+	};
 
-	 void destroy();
+	int create(
+			arg::OpusSampleFrequency sampling_frequency,
+			arg::OpusChannelCount channel_count,
+			enum application_type application = APPLICATION_VOIP
+			);
 
-	 int encode(
-			 const arg::SourceData input,
-			 arg::DestinationData output
-			 );
+	void destroy();
 
-	 int encode_float(
-			 const arg::SourceData input,
-			 arg::DestinationData output
-			 );
+	int encode(
+			SourceData input,
+			DestinationData output
+			);
 
-	 int ctl(
-			 arg::OpusControlRequest request,
-			 arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
-			 );
+	int encode_float(
+			SourceData input,
+			DestinationData output
+			);
 
-	 int get_size(
-			 arg::OpusChannelCount channel_count
-			 );
+	int ctl(
+			arg::OpusControlRequest request,
+			arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
+			);
+
+	int get_size(
+			arg::OpusChannelCount channel_count
+			);
 
 private:
-    OpusEncoder * m_encoder;
-    u8 m_channels;
+	OpusEncoder * m_encoder;
+	u8 m_channels;
 
 
 };
@@ -90,38 +94,38 @@ private:
 class Decoder : public OpusWorkObject {
 public:
 
-	 int get_size(
-			 arg::OpusChannelCount channel_count
-			 );
+	int get_size(
+			arg::OpusChannelCount channel_count
+			);
 
-	 int create(
-			 arg::OpusSampleFrequency sampling_frequency,
-			 arg::OpusChannelCount channel_count
-			 );
+	int create(
+			arg::OpusSampleFrequency sampling_frequency,
+			arg::OpusChannelCount channel_count
+			);
 
-	 void destroy();
+	void destroy();
 
-	 int decode(
-			 const arg::SourceData input,
-			 arg::DestinationData output
-			 );
+	int decode(
+			SourceData input,
+			DestinationData output
+			);
 
-	 int decode_float(
-			 const arg::SourceData input,
-			 arg::DestinationData output
-			 );
+	int decode_float(
+			SourceData input,
+			DestinationData output
+			);
 
-	 int ctl(
-			 arg::OpusControlRequest request,
-			 arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
-			 );
+	int ctl(
+			arg::OpusControlRequest request,
+			arg::OpusControlArgument args = arg::OpusControlArgument(nullptr)
+			);
 
-	 int get_sample_count(
-			 const arg::SourceData input
-			 );
+	int get_sample_count(
+			const var::Data & input
+			);
 
 private:
-    OpusDecoder * m_decoder;
+	OpusDecoder * m_decoder;
 
 
 };
@@ -129,38 +133,38 @@ private:
 class Packet : public OpusWorkObject {
 public:
 
-	 int get_bandwidth(
-			 const arg::SourceData data
-			 );
+	int get_bandwidth(
+			const var::Data & data
+			);
 
-	 int get_samples_per_frame(
-			 const arg::SourceData data,
-			 arg::OpusSampleFrequency
-			 );
+	int get_samples_per_frame(
+			const var::Data & data,
+			arg::OpusSampleFrequency
+			);
 
-	 int get_sample_count(
-			 const arg::SourceData data
-			 );
+	int get_sample_count(
+			const var::Data & data
+			);
 
-	 int pad(
-			 arg::DestinationData data,
-			 arg::Length length
-			 );
+	int pad(
+			var::Data & data,
+			Length length
+			);
 
-	 int unpad(
-			 arg::DestinationData data,
-			 arg::Length length
-			 );
+	int unpad(
+			var::Data & data,
+			Length length
+			);
 
-	 int pad_multistrem(
-			 arg::DestinationData data,
-			 arg::Length length
-			 );
+	int pad_multistrem(
+			var::Data & data,
+			Length length
+			);
 
-	 int unpad_multistream(
-			 arg::DestinationData data,
-			 arg::Length length
-			 );
+	int unpad_multistream(
+			var::Data & data,
+			Length length
+			);
 
 
 
@@ -169,16 +173,16 @@ public:
 class Repacketizer : public OpusWorkObject {
 public:
 
-    //get size
-    //create
-    //destroy
-    //cat
-    //out range
-    //get nb frames
-    //out
+	//get size
+	//create
+	//destroy
+	//cat
+	//out range
+	//get nb frames
+	//out
 
 private:
-    OpusRepacketizer * m_repacketizer;
+	OpusRepacketizer * m_repacketizer;
 
 
 };
