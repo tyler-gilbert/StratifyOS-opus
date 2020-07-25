@@ -20,6 +20,15 @@ namespace opus {
 
 using OpusApi = api::Api<opus_api_t, OPUS_API_REQUEST>;
 
+class OpusFlags {
+public:
+	enum application_type {
+		application_type_voip = OPUS_APPLICATION_VOIP,
+		application_type_audio = OPUS_APPLICATION_AUDIO,
+		application_type_restricted_lowdelay = OPUS_APPLICATION_RESTRICTED_LOWDELAY
+	};
+};
+
 class OpusWorkObject : public api::WorkObject {
 public:
 
@@ -39,7 +48,50 @@ private:
 
 };
 
-class Encoder : public OpusWorkObject {
+class CodecAttributes : public OpusFlags {
+public:
+	CodecAttributes(){}
+
+	CodecAttributes& set_sampling_frequency(
+			u32 value
+			){
+		m_sampling_frequency = value;
+		return *this;
+	}
+
+	CodecAttributes& set_channel_count(
+			u32 value
+			){
+		m_channel_count = value;
+		return *this;
+	}
+
+	CodecAttributes& set_application_type(
+			enum application_type value
+			){
+		m_application_type = value;
+		return *this;
+	}
+
+	u32 sampling_frequency() const {
+		return m_sampling_frequency;
+	}
+
+	u32 channel_count() const {
+		return m_channel_count;
+	}
+
+	enum application_type type() const {
+		return m_application_type;
+	}
+
+private:
+	u32 m_sampling_frequency = 16000;
+	u32 m_channel_count = 2;
+	enum application_type m_application_type = application_type_voip;
+};
+
+class Encoder : public OpusWorkObject, public OpusFlags {
 public:
 
 
@@ -51,17 +103,7 @@ public:
 		destroy();
 	}
 
-	enum application_type {
-		APPLICATION_VOIP = OPUS_APPLICATION_VOIP,
-		APPLICATION_AUDIO = OPUS_APPLICATION_AUDIO,
-		APPLICATION_RESTRICTED_LOWDELAY = OPUS_APPLICATION_RESTRICTED_LOWDELAY
-	};
-
-	int create(
-			arg::OpusSampleFrequency sampling_frequency,
-			arg::OpusChannelCount channel_count,
-			enum application_type application = APPLICATION_VOIP
-			);
+	int create(const CodecAttributes& attributes);
 
 	void destroy();
 
@@ -91,17 +133,14 @@ private:
 
 };
 
-class Decoder : public OpusWorkObject {
+class Decoder : public OpusWorkObject, public OpusFlags {
 public:
 
 	int get_size(
 			arg::OpusChannelCount channel_count
 			);
 
-	int create(
-			arg::OpusSampleFrequency sampling_frequency,
-			arg::OpusChannelCount channel_count
-			);
+	int create(const CodecAttributes& attributes);
 
 	void destroy();
 
@@ -130,7 +169,7 @@ private:
 
 };
 
-class Packet : public OpusWorkObject {
+class Packet : public OpusWorkObject, public OpusFlags {
 public:
 
 	int get_bandwidth(

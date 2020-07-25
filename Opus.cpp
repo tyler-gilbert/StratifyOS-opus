@@ -5,16 +5,14 @@ using namespace opus;
 OpusApi OpusWorkObject::m_api;
 
 int Encoder::create(
-		arg::OpusSampleFrequency sampling_frequency,
-		arg::OpusChannelCount channel_count,
-		enum application_type application
+		const CodecAttributes& attributes
 		){
 
 	int error_number;
 	m_encoder = api()->encoder_create(
-				sampling_frequency.argument(),
-				channel_count.argument(),
-				application,
+				attributes.sampling_frequency(),
+				attributes.channel_count(),
+				attributes.type(),
 				&error_number
 				);
 
@@ -22,7 +20,7 @@ int Encoder::create(
 		set_error_number(error_number);
 		return -1;
 	}
-	m_channels = channel_count.argument();
+	m_channels = attributes.channel_count();
 	return 0;
 }
 
@@ -87,16 +85,15 @@ int Decoder::get_size(
 }
 
 int Decoder::create(
-		arg::OpusSampleFrequency sampling_frequency,
-		arg::OpusChannelCount channel_count
+		const CodecAttributes& attributes
 		){
 	int error_number;
 	m_decoder = api()->decoder_create(
-				sampling_frequency.argument(),
-				channel_count.argument(),
+				attributes.sampling_frequency(),
+				attributes.channel_count(),
 				&error_number
 				);
-	if( m_decoder == 0 ){
+	if( m_decoder == nullptr ){
 		set_error_number(error_number);
 		return -1;
 	}
@@ -106,7 +103,7 @@ int Decoder::create(
 void Decoder::destroy(){
 	if( m_decoder ){
 		api()->decoder_destroy(m_decoder);
-		m_decoder = 0;
+		m_decoder = nullptr;
 	}
 }
 

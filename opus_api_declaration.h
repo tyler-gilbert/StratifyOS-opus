@@ -62,7 +62,7 @@
 #endif
 
 const opus_api_t opus_api = {
-	sos_api = {
+	.sos_api = {
 		.name = "opus",
 		.version = 0x000001,
 		.git_hash = SOS_GIT_HASH
